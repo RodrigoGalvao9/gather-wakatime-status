@@ -56,6 +56,13 @@ class Program
             activityText = "Não foi possível consultar o WakaTime";
         }
 
+        var pingOk = await SendGatherEventAsync(gatherUrl, gatherSecret, "webhook.ping", null);
+        if (!pingOk)
+        {
+            Console.Error.WriteLine("Ping do Gather falhou. Verifique URL e GATHER_WEBHOOK_SECRET.");
+            return 1;
+        }
+
         await SendGatherEventAsync(gatherUrl, gatherSecret, "status.set", new { state });
 
         await SendGatherEventAsync(gatherUrl, gatherSecret, "activity.add", new
@@ -113,17 +120,26 @@ class Program
     /// Standard Webhooks v1 (webhook-id / webhook-timestamp / webhook-signature).
     /// Implementação manual porque não há SDK oficial em C#/.NET.
     /// </summary>
-    static async Task SendGatherEventAsync(string url, string secret, string type, object data)
+    static async Task<bool> SendGatherEventAsync(string url, string secret, string type, object? data)
     {
-        var body = new
-        {
-            type,
-            timestamp = DateTimeOffset.UtcNow.ToString("o"),
-            data
-        };
+        object payload;
 
-        // Serializa UMA vez e assina exatamente esses bytes — não reserializar depois.
-        var rawBody = JsonSerializer.Serialize(body);
+        if (data is null)
+        {
+            payload = new { type };
+        }
+        else
+        {
+            payload = new
+            {
+                type,
+                timestamp = DateTime.UtcNow.ToString("o"),
+                data
+            };
+        }
+
+        // Garante que o corpo assinado seja exatamente o que será enviado.
+        var rawBody = JsonSerializer.Serialize(payload);
         var webhookId = Guid.NewGuid().ToString();
         var webhookTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
 
@@ -146,11 +162,10 @@ class Program
         if (!resp.IsSuccessStatusCode)
         {
             Console.Error.WriteLine($"Gather respondeu {(int)resp.StatusCode} para {type}: {respBody}");
-            resp.EnsureSuccessStatusCode(); // derruba o job — 4xx não deve ser retentado às cegas
+            return false;
         }
-        else
-        {
-            Console.WriteLine($"{type} -> {(int)resp.StatusCode} {respBody}");
-        }
+
+        Console.WriteLine($"{type} -> {(int)resp.StatusCode} {respBody}");
+        return true;
     }
 }
