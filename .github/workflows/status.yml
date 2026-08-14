@@ -1,0 +1,23 @@
+name: Gather WakaTime Status
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  sync-status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Run sync
+        working-directory: ./GatherWakaStatus
+        env:
+          WAKATIME_API_KEY: ${{ secrets.WAKATIME_API_KEY }}
+          GATHER_WEBHOOK_SECRET: ${{ secrets.GATHER_WEBHOOK_SECRET }}
+        run: dotnet run -c Release
