@@ -23,7 +23,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ./GatherWakaStatus/GatherWakaStatus.csproj
 
       - name: Build project
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build ./GatherWakaStatus/GatherWakaStatus.csproj --configuration Release --no-restore

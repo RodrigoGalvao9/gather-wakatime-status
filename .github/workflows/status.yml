@@ -16,8 +16,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Run sync
-        working-directory: ./GatherWakaStatus
         env:
           WAKATIME_API_KEY: ${{ secrets.WAKATIME_API_KEY }}
           GATHER_WEBHOOK_SECRET: ${{ secrets.GATHER_WEBHOOK_SECRET }}
-        run: dotnet run -c Release
+        run: dotnet run --project ./GatherWakaStatus/GatherWakaStatus.csproj -c Release
